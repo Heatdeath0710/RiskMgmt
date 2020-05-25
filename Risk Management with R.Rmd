@@ -7,5 +7,56 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(quantmod)
+```
+
+#FRED Data
+```{r}
+#Retrieve the Wilshire 5000 Index from FRED
+wilsh <- getSymbols("WILL5000IND",src = "FRED",auto.assign = FALSE)
+wilsh <-na.omit(wilsh)
+wilsh <-wilsh["1979-12-31/2017-12-31"]
+names(wilsh) <- "TR"
+head(wilsh)
+#log return = log (1+ return) = log(return T) - log(return T-1)
+#return = exp( log return) -1
+#Transform discrete return to natural log return
+logret <- diff(log(wilsh$TR))[-1]#No first value, so remove
+round(head(logret),6)
+ret <- exp(logret)-1
+head(ret)
+
+#Retrieve Gold Prices from FRED
+gold <- getSymbols("GOLDPMGBD228NLBM",src = "FRED",auto.assign = FALSE)
+gold <-na.omit(gold)
+gold <- gold["1979-12-31/2017-12-31"]
+names(gold) <- "price"
+#Calculate gold daily return
+gold$logret <- diff(log(gold$price))[-1] #log return
+##method 1 - discrete return
+gold$return1 <- exp(gold$logret) -1
+##method 2 - discrete return
+diff_gold <- as.numeric(as.array(diff(gold$price)))[-1]
+price <- as.numeric(as.array(gold$price[-length(gold$price)]))
+gold$return2 <- c(NA,diff_gold/price)
+
+##method 3 - discrete return
+gold$return3 <- Delt(gold$price)
+tail(gold)
+
+#Calculate weekly return
+logret_w <- apply.weekly(wilsh,sum)
+round(head(logret_w),6)
+ret_w <- exp(logret_w)-1 #calculate discrete return from log return
+
+logret_w_gold <- apply.weekly(logret,sum)
+head(logret_w_gold)
+logret_m_gold <- apply.monthly(logret,sum)
+head(logret_m_gold)
+logret_q_gold <- apply.quarterly(logret,sum)
+head(logret_q_gold)
+logret_y_gold <- apply.yearly(logret,sum)
+tail(logret_y_gold)
+logret <- diff(log(gold$price))[-1] #log return
 ```
 
